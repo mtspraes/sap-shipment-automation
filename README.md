@@ -1,3 +1,5 @@
+[English](README.md) | [Português](README.pt-BR.md)
+
 # SAP Shipment Automation
 
 A chat-driven RPA engine for SAP export logistics. A planner types a short
