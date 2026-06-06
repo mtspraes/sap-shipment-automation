@@ -1,0 +1,12 @@
+{
+  "name": "sap-shipment-automation",
+  "version": "1.0.0",
+  "description": "RPA engine for SAP shipping documents: a Teams/Power Automate-driven job queue that creates and manipulates deliveries and shipment documents via SAP GUI Scripting, including a weight-balanced convoy split optimizer.",
+  "type": "module",
+  "main": "src/watcher.js",
+  "scripts": {
+    "demo": "node demo.js"
+  },
+  "keywords": ["rpa", "automation", "sap", "gui-scripting", "power-automate", "teams", "logistics", "supply-chain", "optimization"],
+  "license": "MIT"
+}
