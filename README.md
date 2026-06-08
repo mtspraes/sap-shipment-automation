@@ -2,27 +2,27 @@
 
 # SAP Shipment Automation
 
-A chat-driven RPA engine for SAP export logistics. A planner types a short
-command in a **Microsoft Teams** channel; **Power Automate** turns it into jobs; a
-local watcher executes them against SAP by driving the **SAP GUI** — creating
-deliveries and shipment documents, changing carriers, and splitting oversized
-deliveries into balanced two-truck **convoys**.
+A chat-driven RPA engine for SAP export logistics. A planner types a short command
+in a **Microsoft Teams** channel, **Power Automate** turns it into jobs, and a local
+watcher executes them against SAP by driving the **SAP GUI**. It creates deliveries
+and shipment documents, changes carriers, and splits oversized deliveries into
+balanced two-truck **convoys**.
 
-> **Context.** This is a sanitized, self-contained distillation of a system I
-> built and run in production for a real export operation. The original drives a
-> live SAP GUI via SAP GUI Scripting (which can't run without SAP), so here the
-> SAP layer is replaced by an in-memory `MockSapDriver` behind the same
-> interface — **the entire pipeline runs and is demonstrable with `node demo.js`**.
-> All carriers, codes, SAP identifiers and documents are fictional; no real data.
+> **Context.** This is a sanitized, self-contained distillation of a system I built
+> and run in production for a real export operation. The original drives a live SAP
+> GUI via SAP GUI Scripting (which can't run without SAP), so here the SAP layer is
+> replaced by an in-memory `MockSapDriver` behind the same interface, and **the
+> entire pipeline runs and is demonstrable with `node demo.js`**. All carriers,
+> codes, SAP identifiers and documents are fictional. No real data.
 
 ## The problem
 
 Creating SAP shipping paperwork is repetitive, rigid, and error-prone. For each
-load a planner has to: create the delivery, set weights, release it, create the
-shipment document (DT), assign the right carrier with the right shipment type —
+load a planner has to create the delivery, set weights, release it, create the
+shipment document (DT), and assign the right carrier with the right shipment type,
 across four SAP transactions. And when a load is too big for one truck, they have
 to split it into two **by hand**, balancing pallets and weight across both. Doing
-this dozens of times a day, by hand, is slow and mistakes are costly.
+this dozens of times a day is slow, and mistakes are costly.
 
 This system lets a planner trigger the whole thing from a Teams message.
 
@@ -37,16 +37,16 @@ This system lets a planner trigger the whole thing from a Teams message.
         └───────────────  result posted back to Teams  ◀── result JSON
 ```
 
-The original wiring: Teams → Power Automate (HTML table → JSON) → a OneDrive queue
-folder → a local Node/WSH watcher → SAP GUI Scripting → result file → Power
+The original wiring goes Teams → Power Automate (HTML table to JSON) → a OneDrive
+queue folder → a local Node/WSH watcher → SAP GUI Scripting → result file → Power
 Automate posts the outcome back to the thread. This repo reproduces every part
 **except** the GUI scripting itself, which sits behind a driver interface.
 
-### Key design choice — dependency inversion
+### Key design choice: dependency inversion
 
 Handlers never touch SAP directly; they talk to a `SapDriver` interface. The real
-backend implements it with SAP GUI Scripting; the `MockSapDriver` implements it
-in memory and records every step. That decoupling is what makes the brittle UI
+backend implements it with SAP GUI Scripting; the `MockSapDriver` implements it in
+memory and records every step. That decoupling is what makes the brittle UI
 automation **testable** and the business logic reusable.
 
 ```
@@ -65,8 +65,8 @@ job → handler → SapDriver (interface) → [ MockSapDriver | real GUI-scripti
 ### The convoy split optimizer (the flagship)
 
 A delivery over one truck's limits ships as two trucks. Each truck has two hard
-limits — **28 pallet positions** and a **payload weight cap** — and the two
-trucks should be **balanced**. The optimizer:
+limits, **28 pallet positions** and a **payload weight cap**, and the two trucks
+should be **balanced**. The optimizer:
 
 1. keeps every SKU whole except the heaviest one, which may be split;
 2. brute-forces every way to split that heavy SKU across the two trucks;
@@ -78,10 +78,10 @@ In the demo, a 40-pallet delivery is split into a clean **20 + 20**.
 
 ### Robustness built in (anti-human-error)
 
-- **Field auto-correction** — operators paste table columns out of order, so each
-  cell is classified by its shape (order / delivery / DT / carrier) and assigned
-  to the right field regardless of position.
-- **Carrier `x`/`v` suffix** — a trailing letter on the carrier name forces the
+- **Field auto-correction.** Operators paste table columns out of order, so each
+  cell is classified by its shape (order / delivery / DT / carrier) and assigned to
+  the right field regardless of position.
+- **Carrier `x`/`v` suffix.** A trailing letter on the carrier name forces the
   shipment type to ZA09, an operator shorthand for a different lane.
 - **One failed job never aborts the batch.**
 
@@ -91,7 +91,7 @@ In the demo, a 40-pallet delivery is split into a clean **20 + 20**.
 node demo.js
 ```
 
-It plays all four commands against the in-memory SAP and prints, for each: the
+It plays all four commands against the in-memory SAP and prints, for each one, the
 Teams message, what Power Automate parsed, the exact SAP steps performed, and the
 message posted back to Teams.
 
@@ -113,15 +113,15 @@ demo.js                    End-to-end run
 
 ## Tech & concepts
 
-JavaScript (ES modules, zero dependencies) · RPA / SAP GUI automation (modelled) ·
-dependency inversion (driver interface + mock) · chat-ops via Microsoft Teams +
+JavaScript (ES modules, zero dependencies) · RPA and SAP GUI automation (modelled)
+· dependency inversion (driver interface + mock) · chat-ops via Microsoft Teams and
 Power Automate · job-queue orchestration · constrained bin-packing (convoy split) ·
 fault-tolerant batch processing.
 
 ## Notes
 
 - The real system runs on Windows via SAP GUI Scripting (WSH/JScript) and a
-  OneDrive-backed file queue; a real `SapGuiDriver` would implement `SapDriver`
+  OneDrive-backed file queue. A real `SapGuiDriver` would implement `SapDriver`
   against the live GUI. The handlers, parser, optimizer and routing are unchanged.
 
 ## License
